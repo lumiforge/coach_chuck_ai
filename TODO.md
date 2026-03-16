@@ -1,0 +1,3 @@
+ - Add a way to save and restore details of the user: 
+   - target of training, 
+   - name how to call the user, etc.
