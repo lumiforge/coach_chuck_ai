@@ -165,6 +165,74 @@ ORDER BY f.name ASC, f.id ASC;
 	}, nil
 }
 
+func (r *exerciseRepository) GetExerciseDetails(ctx context.Context, exerciseIDs []int64) (entities.ExerciseDetailsResult, error) {
+	ids := normalizeInt64Slice(exerciseIDs)
+	if len(ids) == 0 {
+		return entities.ExerciseDetailsResult{
+			Items: []entities.ExerciseDetails{},
+		}, nil
+	}
+
+	const query = `
+SELECT
+	e.id,
+	e.name,
+	e.difficulty,
+	e.description,
+	COALESCE(
+		ARRAY_AGG(DISTINCT bp.name ORDER BY bp.name)
+			FILTER (WHERE bp.name IS NOT NULL),
+		'{}'::text[]
+	) AS body_parts,
+	COALESCE(
+		ARRAY_AGG(DISTINCT eq.name ORDER BY eq.name)
+			FILTER (WHERE eq.name IS NOT NULL),
+		'{}'::text[]
+	) AS equipment
+FROM exercises e
+LEFT JOIN exercise_body_parts ebp ON ebp.exercise_id = e.id
+LEFT JOIN body_parts bp ON bp.id = ebp.body_part_id
+LEFT JOIN exercise_equipment ee ON ee.exercise_id = e.id
+LEFT JOIN equipment eq ON eq.id = ee.equipment_id
+WHERE e.id = ANY($1::bigint[])
+GROUP BY e.id, e.name, e.difficulty, e.description
+ORDER BY e.name ASC, e.id ASC;
+`
+
+	rows, err := r.client.Query(ctx, query, ids)
+	if err != nil {
+		return entities.ExerciseDetailsResult{}, err
+	}
+	defer rows.Close()
+
+	items := make([]entities.ExerciseDetails, 0, len(ids))
+
+	for rows.Next() {
+		var item entities.ExerciseDetails
+
+		if err := rows.Scan(
+			&item.ID,
+			&item.Name,
+			&item.Difficulty,
+			&item.Description,
+			&item.BodyParts,
+			&item.Equipment,
+		); err != nil {
+			return entities.ExerciseDetailsResult{}, err
+		}
+
+		items = append(items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return entities.ExerciseDetailsResult{}, err
+	}
+
+	return entities.ExerciseDetailsResult{
+		Items: items,
+	}, nil
+}
+
 func normalizeStringSlice(values []string) []string {
 	if len(values) == 0 {
 		return nil

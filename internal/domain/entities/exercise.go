@@ -21,3 +21,16 @@ type ExerciseSearchResult struct {
 	Items []ExerciseSummary
 	Total int
 }
+
+type ExerciseDetails struct {
+	ID          int64
+	Name        string
+	Difficulty  string
+	Description string
+	BodyParts   []string
+	Equipment   []string
+}
+
+type ExerciseDetailsResult struct {
+	Items []ExerciseDetails
+}
