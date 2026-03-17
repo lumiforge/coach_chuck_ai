@@ -1,6 +1,8 @@
 package tools
 
 import (
+	"context"
+
 	"github.com/lumiforge/coach_chuck_ai/internal/domain/entities"
 	"google.golang.org/adk/tool"
 	"google.golang.org/adk/tool/functiontool"
@@ -26,14 +28,14 @@ type getExerciseDetailsResult struct {
 }
 
 type exerciseDetailsRepository interface {
-	GetExerciseDetails(ctx tool.Context, exerciseIDs []int64) (entities.ExerciseDetailsResult, error)
+	GetExerciseDetails(ctx context.Context, exerciseIDs []int64) (entities.ExerciseDetailsResult, error)
 }
 
 type getExerciseDetailsTool struct {
 	repo exerciseDetailsRepository
 }
 
-func newGetExerciseDetailsTool(repo exerciseDetailsRepository) (tool.Tool, error) {
+func NewGetExerciseDetailsTool(repo exerciseDetailsRepository) (tool.Tool, error) {
 	handler := &getExerciseDetailsTool{repo: repo}
 
 	return functiontool.New(

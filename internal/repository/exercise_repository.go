@@ -2,14 +2,18 @@ package repository
 
 import (
 	"context"
-	"strings"
 
 	"github.com/lumiforge/coach_chuck_ai/internal/domain/entities"
 	client "github.com/lumiforge/coach_chuck_ai/pkg/client/postgresql"
+	"github.com/lumiforge/coach_chuck_ai/pkg/utils"
 )
 
 type exerciseRepository struct {
 	client client.PostgreSQLClient
+}
+
+func NewExerciseRepository(client client.PostgreSQLClient) *exerciseRepository {
+	return &exerciseRepository{client: client}
 }
 
 func (r *exerciseRepository) SearchExercises(ctx context.Context, filter entities.ExerciseSearchFilter) (entities.ExerciseSearchResult, error) {
@@ -29,10 +33,10 @@ func (r *exerciseRepository) SearchExercises(ctx context.Context, filter entitie
 		offset = 0
 	}
 
-	bodyPartsAny := normalizeStringSlice(filter.BodyPartsAny)
-	equipmentAny := normalizeStringSlice(filter.EquipmentAny)
-	difficultyAny := normalizeStringSlice(filter.DifficultyAny)
-	excludeExerciseIDs := normalizeInt64Slice(filter.ExcludeExerciseIDs)
+	bodyPartsAny := utils.NormalizeStringSlice(filter.BodyPartsAny)
+	equipmentAny := utils.NormalizeStringSlice(filter.EquipmentAny)
+	difficultyAny := utils.NormalizeStringSlice(filter.DifficultyAny)
+	excludeExerciseIDs := utils.NormalizeInt64Slice(filter.ExcludeExerciseIDs)
 
 	const countSQL = `
 SELECT COUNT(*)
@@ -166,7 +170,7 @@ ORDER BY f.name ASC, f.id ASC;
 }
 
 func (r *exerciseRepository) GetExerciseDetails(ctx context.Context, exerciseIDs []int64) (entities.ExerciseDetailsResult, error) {
-	ids := normalizeInt64Slice(exerciseIDs)
+	ids := utils.NormalizeInt64Slice(exerciseIDs)
 	if len(ids) == 0 {
 		return entities.ExerciseDetailsResult{
 			Items: []entities.ExerciseDetails{},
@@ -231,61 +235,4 @@ ORDER BY e.name ASC, e.id ASC;
 	return entities.ExerciseDetailsResult{
 		Items: items,
 	}, nil
-}
-
-func normalizeStringSlice(values []string) []string {
-	if len(values) == 0 {
-		return nil
-	}
-
-	out := make([]string, 0, len(values))
-	seen := make(map[string]struct{}, len(values))
-
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" {
-			continue
-		}
-
-		if _, ok := seen[value]; ok {
-			continue
-		}
-
-		seen[value] = struct{}{}
-		out = append(out, value)
-	}
-
-	if len(out) == 0 {
-		return nil
-	}
-
-	return out
-}
-
-func normalizeInt64Slice(values []int64) []int64 {
-	if len(values) == 0 {
-		return nil
-	}
-
-	out := make([]int64, 0, len(values))
-	seen := make(map[int64]struct{}, len(values))
-
-	for _, value := range values {
-		if value <= 0 {
-			continue
-		}
-
-		if _, ok := seen[value]; ok {
-			continue
-		}
-
-		seen[value] = struct{}{}
-		out = append(out, value)
-	}
-
-	if len(out) == 0 {
-		return nil
-	}
-
-	return out
 }

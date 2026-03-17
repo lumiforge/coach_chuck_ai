@@ -34,3 +34,14 @@ type ExerciseDetails struct {
 type ExerciseDetailsResult struct {
 	Items []ExerciseDetails
 }
+
+type TaxonomyEntity string
+
+const (
+	TaxonomyEntityBodyParts TaxonomyEntity = "body_parts"
+	TaxonomyEntityEquipment TaxonomyEntity = "equipment"
+)
+
+type TaxonomyListResult struct {
+	Items []string
+}
