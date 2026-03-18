@@ -6,6 +6,7 @@ import (
 	"time"
 
 	adkopenai "github.com/byebyebruce/adk-go-openai"
+	"github.com/lumiforge/coach_chuck_ai/internal/adk/agents/coach"
 	adktools "github.com/lumiforge/coach_chuck_ai/internal/adk/tools"
 	"github.com/lumiforge/coach_chuck_ai/internal/config"
 	"github.com/lumiforge/coach_chuck_ai/internal/domain/services/exercise_service"
@@ -13,7 +14,6 @@ import (
 	"github.com/lumiforge/coach_chuck_ai/internal/transport/a2a"
 	"github.com/lumiforge/coach_chuck_ai/pkg/client/postgresql"
 	goopenai "github.com/sashabaranov/go-openai"
-	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/tool"
 )
 
@@ -56,15 +56,9 @@ func NewApp(ctx context.Context, cfg *config.Config) (*App, error) {
 
 	model := adkopenai.NewOpenAIModel(cfg.CoachAgent.ModelName, openaiCfg)
 
-	rootAgent, err := llmagent.New(llmagent.Config{
-		Name:        "coach_chuck",
-		Model:       model,
-		Description: "Agent that helps select exercises from the exercise catalog and explain them.",
-		Instruction: "You are a fitness assistant with access to an exercise catalog. Use search_exercises to find candidate exercises by body parts, equipment, and difficulty. Use get_exercise_details only after you have specific exercise IDs and need full descriptions. Never invent exercise IDs, body parts, equipment names, or exercise details. If the user asks for workout ideas, first retrieve relevant exercises from the catalog, then explain the options clearly.",
-		Tools: []tool.Tool{
-			searchExercisesTool,
-			getExerciseDetailsTool,
-		},
+	rootAgent, err := coach.NewRootAgent(model, []tool.Tool{
+		searchExercisesTool,
+		getExerciseDetailsTool,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create root agent: %w", err)

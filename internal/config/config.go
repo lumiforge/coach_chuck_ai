@@ -38,7 +38,6 @@ const (
 	FlagConfigPathName = "config"
 )
 
-var configPath string
 var instance *Config
 var once sync.Once
 
