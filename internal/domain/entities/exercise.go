@@ -35,13 +35,25 @@ type ExerciseDetailsResult struct {
 	Items []ExerciseDetails
 }
 
-type TaxonomyEntity string
+type GetExerciseDetailsInput struct {
+	ExerciseIDs []int64
+}
 
-const (
-	TaxonomyEntityBodyParts TaxonomyEntity = "body_parts"
-	TaxonomyEntityEquipment TaxonomyEntity = "equipment"
-)
+type GetExerciseDetailsOutput struct {
+	Items []ExerciseDetails
+}
 
-type TaxonomyListResult struct {
-	Items []string
+type SearchExercisesInput struct {
+	BodyPartsAny       []string
+	EquipmentAny       []string
+	DifficultyAny      []string
+	ExcludeExerciseIDs []int64
+	Limit              int
+	Offset             int
+}
+
+type SearchExercisesOutput struct {
+	Items   []ExerciseSummary
+	Total   int
+	HasMore bool
 }

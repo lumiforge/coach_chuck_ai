@@ -27,16 +27,16 @@ type getExerciseDetailsResult struct {
 	Error  string            `json:"error,omitempty"`
 }
 
-type exerciseDetailsRepository interface {
-	GetExerciseDetails(ctx context.Context, exerciseIDs []int64) (entities.ExerciseDetailsResult, error)
+type GetExerciseDetailsService interface {
+	GetExerciseDetails(ctx context.Context, input entities.GetExerciseDetailsInput) (entities.GetExerciseDetailsOutput, error)
 }
 
 type getExerciseDetailsTool struct {
-	repo exerciseDetailsRepository
+	service GetExerciseDetailsService
 }
 
-func NewGetExerciseDetailsTool(repo exerciseDetailsRepository) (tool.Tool, error) {
-	handler := &getExerciseDetailsTool{repo: repo}
+func NewGetExerciseDetailsTool(service GetExerciseDetailsService) (tool.Tool, error) {
+	handler := &getExerciseDetailsTool{service: service}
 
 	return functiontool.New(
 		functiontool.Config{
@@ -48,7 +48,9 @@ func NewGetExerciseDetailsTool(repo exerciseDetailsRepository) (tool.Tool, error
 }
 
 func (t *getExerciseDetailsTool) getExerciseDetails(ctx tool.Context, args getExerciseDetailsArgs) (getExerciseDetailsResult, error) {
-	result, err := t.repo.GetExerciseDetails(ctx, args.ExerciseIDs)
+	result, err := t.service.GetExerciseDetails(ctx, entities.GetExerciseDetailsInput{
+		ExerciseIDs: args.ExerciseIDs,
+	})
 	if err != nil {
 		return getExerciseDetailsResult{
 			Status: "error",

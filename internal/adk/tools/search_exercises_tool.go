@@ -2,51 +2,11 @@ package tools
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lumiforge/coach_chuck_ai/internal/domain/entities"
 	"google.golang.org/adk/tool"
 	"google.golang.org/adk/tool/functiontool"
 )
-
-var allowedBodyParts = map[string]struct{}{
-	"abs":                     {},
-	"arms":                    {},
-	"back":                    {},
-	"butt/hips":               {},
-	"chest":                   {},
-	"full body/integrated":    {},
-	"legs - calves and shins": {},
-	"legs - thighs":           {},
-	"neck":                    {},
-	"shoulders":               {},
-}
-
-var allowedEquipment = map[string]struct{}{
-	"barbell":                        {},
-	"bench":                          {},
-	"bosu trainer":                   {},
-	"cones":                          {},
-	"dumbbells":                      {},
-	"heavy ropes":                    {},
-	"hurdles":                        {},
-	"kettlebells":                    {},
-	"ladder":                         {},
-	"medicine ball":                  {},
-	"no equipment":                   {},
-	"pull up bar":                    {},
-	"raised platform/box":            {},
-	"resistance bands/cables":        {},
-	"stability ball":                 {},
-	"trx":                            {},
-	"weight machines / selectorized": {},
-}
-
-var allowedDifficulty = map[string]struct{}{
-	"beginner":     {},
-	"intermediate": {},
-	"advanced":     {},
-}
 
 type searchExercisesArgs struct {
 	BodyPartsAny       []string `json:"body_parts_any,omitempty" jsonschema:"Optional. Match exercises that target at least one of these body parts. Allowed values: abs, arms, back, butt/hips, chest, full body/integrated, legs - calves and shins, legs - thighs, neck, shoulders."`
@@ -72,16 +32,17 @@ type searchExercisesResult struct {
 	HasMore bool              `json:"has_more,omitempty"`
 	Error   string            `json:"error,omitempty"`
 }
-type searchExerciseRepository interface {
-	SearchExercises(ctx context.Context, filter entities.ExerciseSearchFilter) (entities.ExerciseSearchResult, error)
+
+type SearchExercisesService interface {
+	SearchExercises(ctx context.Context, input entities.SearchExercisesInput) (entities.SearchExercisesOutput, error)
 }
 
 type searchExercisesTool struct {
-	repo searchExerciseRepository
+	service SearchExercisesService
 }
 
-func NewSearchExercisesTool(repo searchExerciseRepository) (tool.Tool, error) {
-	handler := &searchExercisesTool{repo: repo}
+func NewSearchExercisesTool(service SearchExercisesService) (tool.Tool, error) {
+	handler := &searchExercisesTool{service: service}
 
 	return functiontool.New(
 		functiontool.Config{
@@ -93,47 +54,13 @@ func NewSearchExercisesTool(repo searchExerciseRepository) (tool.Tool, error) {
 }
 
 func (t *searchExercisesTool) searchExercises(ctx tool.Context, args searchExercisesArgs) (searchExercisesResult, error) {
-	if err := validateAllowedStrings(args.BodyPartsAny, allowedBodyParts, "body_parts_any"); err != nil {
-		return searchExercisesResult{
-			Status: "error",
-			Error:  err.Error(),
-		}, nil
-	}
-
-	if err := validateAllowedStrings(args.EquipmentAny, allowedEquipment, "equipment_any"); err != nil {
-		return searchExercisesResult{
-			Status: "error",
-			Error:  err.Error(),
-		}, nil
-	}
-
-	if err := validateAllowedStrings(args.DifficultyAny, allowedDifficulty, "difficulty_any"); err != nil {
-		return searchExercisesResult{
-			Status: "error",
-			Error:  err.Error(),
-		}, nil
-	}
-
-	limit := args.Limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 50 {
-		limit = 50
-	}
-
-	offset := args.Offset
-	if offset < 0 {
-		offset = 0
-	}
-
-	result, err := t.repo.SearchExercises(ctx, entities.ExerciseSearchFilter{
+	result, err := t.service.SearchExercises(ctx, entities.SearchExercisesInput{
 		BodyPartsAny:       args.BodyPartsAny,
 		EquipmentAny:       args.EquipmentAny,
 		DifficultyAny:      args.DifficultyAny,
 		ExcludeExerciseIDs: args.ExcludeExerciseIDs,
-		Limit:              limit,
-		Offset:             offset,
+		Limit:              args.Limit,
+		Offset:             args.Offset,
 	})
 	if err != nil {
 		return searchExercisesResult{
@@ -157,15 +84,6 @@ func (t *searchExercisesTool) searchExercises(ctx tool.Context, args searchExerc
 		Status:  "success",
 		Items:   items,
 		Total:   result.Total,
-		HasMore: offset+len(items) < result.Total,
+		HasMore: result.HasMore,
 	}, nil
-}
-
-func validateAllowedStrings(values []string, allowed map[string]struct{}, fieldName string) error {
-	for _, value := range values {
-		if _, ok := allowed[value]; !ok {
-			return fmt.Errorf("invalid %s value: %q", fieldName, value)
-		}
-	}
-	return nil
 }

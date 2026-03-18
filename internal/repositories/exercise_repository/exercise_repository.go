@@ -1,18 +1,18 @@
-package repository
+package exercise_repository
 
 import (
 	"context"
 
 	"github.com/lumiforge/coach_chuck_ai/internal/domain/entities"
-	client "github.com/lumiforge/coach_chuck_ai/pkg/client/postgresql"
+	"github.com/lumiforge/coach_chuck_ai/pkg/client/postgresql"
 	"github.com/lumiforge/coach_chuck_ai/pkg/utils"
 )
 
 type exerciseRepository struct {
-	client client.PostgreSQLClient
+	client postgresql.PostgreSQLClient
 }
 
-func NewExerciseRepository(client client.PostgreSQLClient) *exerciseRepository {
+func NewExerciseRepository(client postgresql.PostgreSQLClient) *exerciseRepository {
 	return &exerciseRepository{client: client}
 }
 
