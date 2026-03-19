@@ -34,7 +34,7 @@ func serveAgentCard(port string) http.HandlerFunc {
 						"description": "Ability to render A2UI",
 						"required":    false,
 						"params": map[string]any{
-							"supportedCatalogIds":   []string{basicCatalogV09ID},
+							"supportedCatalogIds":   []string{workoutCatalogID},
 							"acceptsInlineCatalogs": false,
 						},
 					},

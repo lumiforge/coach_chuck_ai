@@ -5,11 +5,20 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
+	"github.com/google/jsonschema-go/jsonschema"
+	cataloga2ui "github.com/lumiforge/coach_chuck_ai/internal/a2ui"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/model"
 	"google.golang.org/genai"
+)
+
+var (
+	workoutSchemaOnce sync.Once
+	workoutSchema     *jsonschema.Resolved
+	workoutSchemaErr  error
 )
 
 func flattenText(parts []*genai.Part) string {
@@ -106,10 +115,17 @@ func validateA2UIV09JSONL(raw string) error {
 			if strings.TrimSpace(surfaceID) == "" {
 				return fmt.Errorf("message %d: createSurface.surfaceId is required", messageCount)
 			}
+			if surfaceID != "main" {
+				return fmt.Errorf("message %d: createSurface.surfaceId must be main", messageCount)
+			}
 
 			catalogID, _ := obj["catalogId"].(string)
-			if catalogID != "https://a2ui.org/specification/v0_9/basic_catalog.json" {
-				return fmt.Errorf("message %d: createSurface.catalogId must be https://a2ui.org/specification/v0_9/basic_catalog.json", messageCount)
+			if catalogID != "https://lumiforge.dev/a2ui/catalogs/workout/v1" {
+				return fmt.Errorf(
+					"message %d: createSurface.catalogId must be %s",
+					messageCount,
+					"https://lumiforge.dev/a2ui/catalogs/workout/v1",
+				)
 			}
 		}
 
@@ -125,6 +141,9 @@ func validateA2UIV09JSONL(raw string) error {
 			surfaceID, _ := obj["surfaceId"].(string)
 			if strings.TrimSpace(surfaceID) == "" {
 				return fmt.Errorf("message %d: updateComponents.surfaceId is required", messageCount)
+			}
+			if surfaceID != "main" {
+				return fmt.Errorf("message %d: updateComponents.surfaceId must be main", messageCount)
 			}
 
 			components, ok := obj["components"].([]any)
@@ -142,13 +161,21 @@ func validateA2UIV09JSONL(raw string) error {
 				if strings.TrimSpace(id) == "" {
 					return fmt.Errorf("message %d: component.id is required", messageCount)
 				}
-				if id == "root" {
-					rootSeen = true
-				}
 
 				discriminator, _ := component["component"].(string)
 				if strings.TrimSpace(discriminator) == "" {
 					return fmt.Errorf("message %d: component.component is required", messageCount)
+				}
+				if discriminator != "Workout" {
+					return fmt.Errorf("message %d: component.component must be Workout", messageCount)
+				}
+
+				if id == "root" {
+					rootSeen = true
+
+					if err := validateWorkoutRootComponent(component); err != nil {
+						return fmt.Errorf("message %d: invalid root Workout component: %w", messageCount, err)
+					}
 				}
 			}
 		}
@@ -164,6 +191,9 @@ func validateA2UIV09JSONL(raw string) error {
 			surfaceID, _ := obj["surfaceId"].(string)
 			if strings.TrimSpace(surfaceID) == "" {
 				return fmt.Errorf("message %d: updateDataModel.surfaceId is required", messageCount)
+			}
+			if surfaceID != "main" {
+				return fmt.Errorf("message %d: updateDataModel.surfaceId must be main", messageCount)
 			}
 		}
 
@@ -193,4 +223,63 @@ func validateA2UIV09JSONL(raw string) error {
 	}
 
 	return nil
+}
+
+func validateWorkoutRootComponent(component map[string]any) error {
+	rs, err := getWorkoutComponentSchema()
+	if err != nil {
+		return err
+	}
+
+	if err := rs.Validate(component); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getWorkoutComponentSchema() (*jsonschema.Resolved, error) {
+	workoutSchemaOnce.Do(func() {
+		var catalogDoc map[string]any
+		if err := json.Unmarshal(cataloga2ui.WorkoutCatalogJSON, &catalogDoc); err != nil {
+			workoutSchemaErr = fmt.Errorf("unmarshal workout catalog: %w", err)
+			return
+		}
+
+		rawComponents, ok := catalogDoc["components"].(map[string]any)
+		if !ok {
+			workoutSchemaErr = fmt.Errorf("workout catalog: components object is required")
+			return
+		}
+
+		rawWorkoutSchema, ok := rawComponents["Workout"]
+		if !ok {
+			workoutSchemaErr = fmt.Errorf("workout catalog: Workout component schema is required")
+			return
+		}
+
+		schemaBytes, err := json.Marshal(rawWorkoutSchema)
+		if err != nil {
+			workoutSchemaErr = fmt.Errorf("marshal Workout component schema: %w", err)
+			return
+		}
+
+		var schema jsonschema.Schema
+		if err := json.Unmarshal(schemaBytes, &schema); err != nil {
+			workoutSchemaErr = fmt.Errorf("unmarshal Workout component schema: %w", err)
+			return
+		}
+
+		workoutSchema, workoutSchemaErr = schema.Resolve(nil)
+		if workoutSchemaErr != nil {
+			workoutSchemaErr = fmt.Errorf("resolve Workout component schema: %w", workoutSchemaErr)
+			return
+		}
+	})
+
+	if workoutSchemaErr != nil {
+		return nil, workoutSchemaErr
+	}
+
+	return workoutSchema, nil
 }

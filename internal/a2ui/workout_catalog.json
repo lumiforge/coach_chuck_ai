@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumiforge.dev/a2ui/catalogs/workout/v1",
+  "title": "Coach Chuck Workout Catalog",
+  "description": "Custom A2UI catalog for workout rendering.",
+  "catalogId": "https://lumiforge.dev/a2ui/catalogs/workout/v1",
+  "components": {
+    "Workout": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "const": "root"
+        },
+        "component": {
+          "const": "Workout"
+        },
+        "title": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Block"
+          }
+        }
+      },
+      "required": ["id", "component", "title", "blocks"],
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "DynamicString": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literalString": {
+              "type": "string"
+            }
+          },
+          "required": ["literalString"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["path"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DynamicNumber": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literalNumber": {
+              "type": "number"
+            }
+          },
+          "required": ["literalNumber"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["path"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExerciseType": {
+      "oneOf": [
+        {
+          "const": "exercise"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literalString": {
+              "const": "exercise"
+            }
+          },
+          "required": ["literalString"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["path"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RestType": {
+      "oneOf": [
+        {
+          "const": "rest"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literalString": {
+              "const": "rest"
+            }
+          },
+          "required": ["literalString"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["path"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExerciseItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/ExerciseType"
+        },
+        "name": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "durationSec": {
+          "$ref": "#/$defs/DynamicNumber"
+        },
+        "reps": {
+          "$ref": "#/$defs/DynamicNumber"
+        },
+        "weightKg": {
+          "$ref": "#/$defs/DynamicNumber"
+        }
+      },
+      "required": ["type", "name"],
+      "additionalProperties": false
+    },
+    "RestItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/RestType"
+        },
+        "durationSec": {
+          "$ref": "#/$defs/DynamicNumber"
+        }
+      },
+      "required": ["type", "durationSec"],
+      "additionalProperties": false
+    },
+    "Set": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ExerciseItem"
+              },
+              {
+                "$ref": "#/$defs/RestItem"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "Block": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "sets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Set"
+          }
+        }
+      },
+      "required": ["title", "sets"],
+      "additionalProperties": false
+    }
+  }
+}
