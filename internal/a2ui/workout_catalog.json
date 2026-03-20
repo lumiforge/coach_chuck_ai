@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lumiforge.dev/a2ui/catalogs/workout/v1",
+  "$id": "https://github.com/lumiforge/coach_chuck/catalogs/workout/v1",
   "title": "Coach Chuck Workout Catalog",
   "description": "Custom A2UI catalog for workout rendering.",
-  "catalogId": "https://lumiforge.dev/a2ui/catalogs/workout/v1",
+  "catalogId": "https://github.com/lumiforge/coach_chuck/catalogs/workout/v1",
   "components": {
     "Workout": {
       "type": "object",

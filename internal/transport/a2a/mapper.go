@@ -61,7 +61,7 @@ func buildAgentInput(msg *a2a.Message) string {
 		switch actionName {
 		default:
 			b, _ := json.Marshal(ctxObj)
-			return fmt.Sprintf("User submitted an event: %s with data: %s", actionName, string(b))
+			textParts = append(textParts, fmt.Sprintf("User submitted an event: %s with data: %s", actionName, string(b)))
 		}
 	}
 

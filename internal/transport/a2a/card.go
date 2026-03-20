@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	cataloga2ui "github.com/lumiforge/coach_chuck_ai/internal/a2ui"
 )
 
 func serveAgentCard(port string) http.HandlerFunc {
@@ -34,7 +36,7 @@ func serveAgentCard(port string) http.HandlerFunc {
 						"description": "Ability to render A2UI",
 						"required":    false,
 						"params": map[string]any{
-							"supportedCatalogIds":   []string{workoutCatalogID},
+							"supportedCatalogIds":   []string{cataloga2ui.WorkoutCatalogID},
 							"acceptsInlineCatalogs": false,
 						},
 					},
